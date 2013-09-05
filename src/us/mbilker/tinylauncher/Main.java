@@ -1,6 +1,7 @@
 package us.mbilker.tinylauncher;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,8 +37,9 @@ public class Main {
 				if (localProcess == null) throw new Exception("!");
 				else {
 					try {
+						InputStream input = localProcess.getInputStream();
 		                int d;
-		                while ((d = localProcess.getInputStream().read()) != -1) {
+		                while ((d = input.read()) != -1) {
 		                    System.out.write(d);
 		                }
 		            } catch (IOException ex) {
