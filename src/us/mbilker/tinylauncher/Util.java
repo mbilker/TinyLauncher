@@ -1,4 +1,4 @@
-package us.mbilker.minecraftportable;
+package us.mbilker.tinylauncher;
 
 import java.io.File;
 
@@ -22,7 +22,7 @@ public class Util {
   }
 
   public static File getWorkingDirectory(String paramString) {
-    File localFile = MinecraftPortable.clientDir;
+    File localFile = TinyLauncher.clientDir;
     if ((!localFile.exists()) && (!localFile.mkdirs()))
       throw new RuntimeException("The working directory could not be created: " + localFile);
     return localFile;

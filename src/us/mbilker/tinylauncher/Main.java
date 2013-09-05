@@ -1,43 +1,17 @@
-package us.mbilker.minecraftportable;
+package us.mbilker.tinylauncher;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 public class Main {
-	
-	private static Logger logger = Logger.getLogger("MinecraftPortable");
-	
 	private static final int MIN_HEAP = 512;
 	private static final int RECOMMENDED_HEAP = 1024;
 	
-	public static void log(String formatString, Object... params) {
-		logger.info(String.format(formatString, params));
-	}
-	
-	public static PrintStream createLoggingProxy(final PrintStream realPrintStream) {
-        return new PrintStream(realPrintStream) {
-            public void print(final String string) {
-                logger.info(string);
-            }
-            public void println(final String string) {
-                logger.info(string);
-            }
-        };
-    }
-	
 	public static void main(String[] args) {
-		boolean doLaunch = false;
-		
 		float f = (Runtime.getRuntime().maxMemory() / 1024L / 1024L);
-		if (f > 511.0F)
-			doLaunch = true;
-		else {
-			doLaunch = false;
+		if (f < 512.0F) {
 			try {
 				String str = Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
 				List<String> localArrayList = new ArrayList<String>();
@@ -56,7 +30,7 @@ public class Main {
 				localArrayList.add(str);
 				localArrayList.add(Main.class.getName());
 				localArrayList.addAll(Arrays.asList(args));
-				Logger.getLogger("MinecraftPortable").warn("Restarting minecraft with necessary RAM and options " + localArrayList);
+				System.out.println("Restarting minecraft with necessary RAM and options " + localArrayList);
 				ProcessBuilder localProcessBuilder = new ProcessBuilder(localArrayList);
 				Process localProcess = localProcessBuilder.start();
 				if (localProcess == null) throw new Exception("!");
@@ -73,14 +47,10 @@ public class Main {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-		        new MinecraftPortable(args);
+		        new TinyLauncher(args);
 			}
-		}
-		
-		if (doLaunch == true) {
-			System.setOut(createLoggingProxy(System.out));
-			System.setErr(createLoggingProxy(System.err));
-			new MinecraftPortable(args);
+		} else {
+			new TinyLauncher(args);
 		}
 	}
 

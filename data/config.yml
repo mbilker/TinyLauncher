@@ -1,0 +1,5 @@
+Autologin:
+  server: ''
+Settings:
+  noupdate: false
+  lastjar: minecraft.jar

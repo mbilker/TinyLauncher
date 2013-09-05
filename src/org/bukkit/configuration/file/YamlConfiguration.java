@@ -15,7 +15,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.error.YAMLException;
 import org.yaml.snakeyaml.representer.Representer;
 
-import us.mbilker.minecraftportable.Main;
+import us.mbilker.tinylauncher.TinyLauncher;
 
 /**
  * An implementation of {@link Configuration} which saves all files in Yaml.
@@ -175,9 +175,9 @@ public class YamlConfiguration extends FileConfiguration {
             config.load(file);
         } catch (FileNotFoundException ex) {
         } catch (IOException ex) {
-            Main.log("Cannot load " + file, ex);
+            TinyLauncher.LOGGER.info(String.format("Cannot load " + file, ex));
         } catch (InvalidConfigurationException ex) {
-            Main.log("Cannot load " + file , ex);
+            TinyLauncher.LOGGER.info(String.format("Cannot load " + file, ex));
         }
 
         return config;
@@ -201,9 +201,9 @@ public class YamlConfiguration extends FileConfiguration {
         try {
             config.load(stream);
         } catch (IOException ex) {
-            Main.log("Cannot load configuration from stream", ex);
+            TinyLauncher.LOGGER.info(String.format("Cannot load configuration from stream", ex));
         } catch (InvalidConfigurationException ex) {
-            Main.log("Cannot load configuration from stream", ex);
+            TinyLauncher.LOGGER.info(String.format("Cannot load configuration from stream", ex));
         }
 
         return config;

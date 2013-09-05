@@ -1,4 +1,4 @@
-package us.mbilker.minecraftportable;
+package us.mbilker.tinylauncher;
 
 import java.io.File;
 import java.io.IOException;
@@ -7,13 +7,19 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 
-public class MinecraftPortable {
+public class TinyLauncher {
+	
+	public static Logger LOGGER = Logger.getLogger("TinyLauncher");
 	
 	public static File currentDir = new File(System.getProperty("user.dir", "."));
-	public static File dataDir = new File(currentDir, "mcp_data");
+	public static File dataDir = new File(currentDir, "data");
 	public static File serverDir = new File(dataDir, "server");
 	public static File configFile = new File(dataDir, "config.yml");
 	
@@ -23,44 +29,53 @@ public class MinecraftPortable {
 	
 	public static String[] ignore = { "lwjgl.jar", "jinput.jar", "lwjgl_util.jar", };
 	
-	public MinecraftPortable(String[] args) {
+	static {
+		LogManager.getLogManager().reset();
+		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.OFF);
+		
+		ConsoleHandler handler = new ConsoleHandler();
+		handler.setFormatter(new LogFormatter());
+		LOGGER.setUseParentHandlers(false);
+		LOGGER.addHandler(handler);
+	}
+	
+	public TinyLauncher(String[] args) {
 		
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss aa");
         Date date = new Date();
 		
-		Main.log("Minecraft Portable 2.8");
-		Main.log("by mbilker");
-		Main.log("Started at %s", dateFormat.format(date));
-		Main.log("Data directory: %s", dataDir.toString());
+        LOGGER.info("Tiny Launcher (by mbilker)");
+        LOGGER.info(String.format("Started at %s", dateFormat.format(date)));
+		LOGGER.info(String.format("Data directory: %s", dataDir.toString()));
 		
-		Main.log("Setting minecraft directory as user home and current directory just in case");
+		LOGGER.info("Setting minecraft directory as user home and current directory just in case");
 		System.setProperty("user.home", clientDir.getAbsolutePath());
 		System.setProperty("user.dir", clientDir.getAbsolutePath());
 		
 		if (!dataDir.exists()) {
-			Main.log("Data folder does not exist, creating. Typical on first start.");
+			LOGGER.info("Data folder does not exist, creating. Typical on first start.");
 			dataDir.mkdir();
 		}
 		
 		if (!serverDir.exists()) {
-			Main.log("Server folder does not exist, creating. Typical on first start.");
+			LOGGER.info("Server folder does not exist, creating. Typical on first start.");
 			serverDir.mkdir();
 		}
 		
 		if (!clientDir.exists()) {
-			Main.log(".minecraft folder does not exist, creating. Typical on first start.");
+			LOGGER.info(".minecraft folder does not exist, creating. Typical on first start.");
 			clientDir.mkdir();
 		}
 		
 		if (!configFile.exists()) {
-			Main.log("Config file does not exist, creating. Typical on first start.");
+			LOGGER.info("Config file does not exist, creating. Typical on first start.");
 			try {
 				config.set("Autologin.server", "");
 				config.set("Settings.noupdate", false);
 				config.set("Settings.lastjar", "minecraft.jar");
 				saveConfig();
 			} catch (IOException e) {
-				Main.log("Problem creating config file");
+				LOGGER.info("Problem creating config file");
 				e.printStackTrace();
 			}
 		}
@@ -95,7 +110,7 @@ public class MinecraftPortable {
 	    }
 	    
 	    if (!config.getString("Autologin.server", "").isEmpty() && !mapOfLauncherArgs.containsKey("server") && !mapOfLauncherArgs.containsKey("port")) {
-	    	Main.log("Using server from config, '%s'", config.getString("Autologin.server"));
+	    	LOGGER.info(String.format("Using server from config, '%s'", config.getString("Autologin.server")));
 	    	String server = config.getString("Autologin.server");
 	    	String port = "25565";
 	    	if (server.contains(":")) {
@@ -107,7 +122,7 @@ public class MinecraftPortable {
 	    	mapOfLauncherArgs.put("port", port);
 	    }
 	    
-		LauncherFrame.main(mapOfLauncherArgs);
+		//LauncherFrame.main(mapOfLauncherArgs);
 	}
 	
 	public static void saveConfig() throws IOException {
