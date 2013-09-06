@@ -5,17 +5,25 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import org.bukkit.configuration.file.YamlConfiguration;
+import com.beust.jcommander.JCommander;
+
+import us.mbilker.auth.Authentication;
+import us.mbilker.auth.AuthenticationResponse;
+import us.mbilker.auth.LastLogin;
+import us.mbilker.auth.LastLoginCipherException;
+import us.mbilker.configuration.file.YamlConfiguration;
 
 public class TinyLauncher {
 	
@@ -33,7 +41,13 @@ public class TinyLauncher {
 	
 	public static YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
 	
-	public static String[] ignore = { "lwjgl.jar", "jinput.jar", "lwjgl_util.jar", };
+	public static String[] ignore = { "lwjgl.jar", "jinput.jar", "lwjgl_util.jar" };
+	
+	private File binDir = new File(clientDir, "bin");
+    private String nativeDir = new File(binDir, "natives").getAbsolutePath();
+    
+    private String realUsername = "Player";
+    private String sessionId = "0";
 	
 	static {
 		System.setErr(System.out);
@@ -53,7 +67,7 @@ public class TinyLauncher {
 		LOGGER.addHandler(handler);
 	}
 	
-	public TinyLauncher(String[] args) {
+	public TinyLauncher(String[] args, JCommander cmd, CommandOptions params) {
 		
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss aa");
         Date date = new Date();
@@ -94,34 +108,55 @@ public class TinyLauncher {
 			}
 		}
 		
-		String str1 = null;
-	    String str2 = null;
-	    
-	    Map<String, String> mapOfLauncherArgs = new HashMap<String, String>();
-	    
-	    for (String str4 : args) {
-	      if ((str4.startsWith("-u=")) || (str4.startsWith("--user="))) {
-	        str1 = getArgValue(str4);
-	        mapOfLauncherArgs.put("user", str1);
-	      } else if ((str4.startsWith("-p=")) || (str4.startsWith("--password="))) {
-	        str2 = getArgValue(str4);
-	        mapOfLauncherArgs.put("password", str2);
-	      }
-	    }
-
-	    if (args.length >= 3) {
-	      String param = args[2];
-	      String str3 = "25565";
-	      if (param.contains(":")) {
-	        String[] arrayOfString = param.split(":");
-	        param = arrayOfString[0];
-	        str3 = arrayOfString[1];
-	      }
-	      mapOfLauncherArgs.put("server", param);
-	      mapOfLauncherArgs.put("port", str3);
-	    }
-	    
-	  //LauncherFrame.main(mapOfLauncherArgs); 854, 480
+		if (params.auth && !"".equals(params.username) && !"".equals(params.password)) {
+			final Authentication auth = new Authentication(params.username, params.password);
+			AuthenticationResponse response = AuthenticationResponse.UNKNOWN;
+			try {
+				response = auth.authenticate();
+			} catch (UnsupportedEncodingException e) {
+				e.printStackTrace();
+			} catch (MalformedURLException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			if (response == AuthenticationResponse.SUCCESS) {
+				sessionId = auth.getSessionId();
+				realUsername = auth.getRealUsername();
+				LOGGER.log(Level.INFO, String.format("Successful authentication, user: %s, sessionId: %s", realUsername, sessionId));
+				
+				if (params.lastlogin) {
+					LastLogin lastlogin = new LastLogin(auth);
+					try {
+						lastlogin.writeTo(dataDir.getAbsolutePath());
+					} catch (IOException e) {
+						e.printStackTrace();
+					} catch (LastLoginCipherException e) {
+						e.printStackTrace();
+					}
+				}
+				
+				if (params.keepAlive > 0) {
+					Timer timer = new Timer("Authentication Keep Alive", true);
+					timer.scheduleAtFixedRate(new TimerTask() {
+						@Override
+						public void run() {
+							try {
+								auth.keepAlive();
+							} catch (UnsupportedEncodingException e) {
+								e.printStackTrace();
+							} catch (MalformedURLException e) {
+								e.printStackTrace();
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
+					}, params.keepAlive * 1000, params.keepAlive * 1000);
+				}
+			}
+		} else {
+			LOGGER.warning("No authentication, going offline");
+		}
 	    
 	    System.setProperty("user.home", dataDir.getAbsolutePath());
 	    System.setProperty("minecraft.applet.TargetDirectory", clientDir.getAbsolutePath());
@@ -133,6 +168,10 @@ public class TinyLauncher {
 	    
 	    ContainerApplet container = new ContainerApplet(appletToLoad);
 	    
+	    container.setUsername(realUsername);
+	    container.setMpPass(params.password);
+	    container.setSessionId(sessionId);
+	    
 	    ContainerFrame frame = new ContainerFrame(title);
 	    
 	    Dimension d = new Dimension(854, 480);
@@ -140,9 +179,6 @@ public class TinyLauncher {
 	    frame.setSize(d);
 	    frame.setContainerApplet(container);
 	    frame.setVisible(true);
-	    
-	    File binDir = new File(clientDir, "bin");
-	    String nativeDir = new File(binDir, "natives").getAbsolutePath();
 	    
 	    container.loadNatives(nativeDir);
 	    if (container.loadJarsAndApplet(clientDir.getAbsolutePath(), binDir.getAbsolutePath())) {
@@ -156,13 +192,5 @@ public class TinyLauncher {
 	
 	public static void saveConfig() throws IOException {
 		config.save(configFile);
-	}
-	
-	private static String getArgValue(String paramString) {
-		int i = paramString.indexOf('=');
-		if (i < 0) {
-			return "";
-		}
-		return paramString.substring(i + 1);
 	}
 }

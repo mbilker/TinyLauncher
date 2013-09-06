@@ -17,7 +17,7 @@
 		<delete failonerror="false">
 			<fileset dir="bin" includes="**/*"/>
 		</delete>
-		<delete file="MinecraftTinyLauncher.jar"/>
+		<delete file="TinyLauncher.jar"/>
 		<mkdir dir="bin"/>
 	</target>
 	
@@ -28,7 +28,7 @@
 	
 	<target name="compress" description="Compression target">
 		<echo>Compressing</echo>
-		<jar jarfile="MinecraftTinyLauncher.jar" basedir="bin" includes="**/*">
+		<jar jarfile="TinyLauncher.jar" basedir="bin" includes="**/*">
 			<zipgroupfileset dir="lib" includes="*.jar"/>
 			<fileset dir="resources" includes="**"/>
 			<manifest>

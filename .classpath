@@ -5,5 +5,6 @@
 	<classpathentry kind="lib" path="lib/snakeyaml-1.10.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang3-3.1.jar"/>
 	<classpathentry kind="lib" path="lib/guava-13.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/jcommander-1.31-SNAPSHOT.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
