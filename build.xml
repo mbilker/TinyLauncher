@@ -31,7 +31,6 @@
 		<echo>Compressing</echo>
 		<jar jarfile="TinyLauncher.jar" basedir="bin" includes="**/*">
 			<zipgroupfileset dir="lib" includes="*.jar"/>
-			<fileset dir="resources" includes="**"/>
 			<manifest>
 				<attribute name="Main-Class" value="us.mbilker.tinylauncher.Main"/>
 			</manifest>
@@ -40,7 +39,6 @@
 
 	<target name="package" description="Package for Mac OS X">
 		<echo>Packaging</echo>
-		<copy file="TinyLauncher.jar" todir="TinyLauncher.app/Contents/Resources/Java">
-		</copy>
+		<copy file="TinyLauncher.jar" todir="TinyLauncher.app/Contents/Resources/Java" />
 	</target>
 </project>
