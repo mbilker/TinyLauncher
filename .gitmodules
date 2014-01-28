@@ -1,0 +1,3 @@
+[submodule "MinecraftMiddleKnife"]
+	path = MinecraftMiddleKnife
+	url = https://github.com/RobertZenz/MinecraftMiddleKnife

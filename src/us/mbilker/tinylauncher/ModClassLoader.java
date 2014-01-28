@@ -196,9 +196,9 @@ public class ModClassLoader extends URLClassLoader {
 			}
 			Enumeration<URL> result = null;
 			if (resource.startsWith("res/")) {
-				result = getEnumeration(TinyLauncher.assetsDir.getCanonicalPath() + resource.substring(3), resource);
+				result = getEnumeration(TinyLauncher.instance.assetsDir + resource.substring(3), resource);
 			} else if (resource.startsWith("/res/")) {
-				result = getEnumeration(TinyLauncher.assetsDir.getCanonicalPath() + resource.substring(4), resource);
+				result = getEnumeration(TinyLauncher.instance.assetsDir + resource.substring(4), resource);
 			}
 
 			if (result != null) {

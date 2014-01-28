@@ -22,7 +22,7 @@ public class Util {
   }
 
   public static File getWorkingDirectory(String paramString) {
-    File localFile = TinyLauncher.clientDir;
+    File localFile = TinyLauncher.instance.clientDir;
     if ((!localFile.exists()) && (!localFile.mkdirs()))
       throw new RuntimeException("The working directory could not be created: " + localFile);
     return localFile;

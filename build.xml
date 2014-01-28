@@ -8,8 +8,8 @@
 		<fileset dir="lib" includes="*.jar"/>
 	</path>
 	
-	<target name="main" depends="clean, compile, compress" description="Main target">
-		<echo>Building the .jar file.</echo>
+	<target name="main" depends="clean, compile, compress, package" description="Main target">
+		<echo>Building the jar file.</echo>
 	</target>
 	
 	<target name="clean" description="Cleans project">
@@ -23,7 +23,8 @@
 	
 	<target name="compile" description="Compilation target">
 		<echo>Compiling</echo>
-		<javac srcdir="src" destdir="bin" debug="on" debuglevel="lines,vars,source" classpathref="classpath" includeantruntime="false"/>
+                <javac srcdir="MinecraftMiddleKnife/src" classpathref="classpath" destdir="bin" debug="on" includeantruntime="false" />
+		<javac srcdir="src" destdir="bin" classpathref="classpath" debug="on" includeantruntime="false" />
 	</target>
 	
 	<target name="compress" description="Compression target">
@@ -35,5 +36,11 @@
 				<attribute name="Main-Class" value="us.mbilker.tinylauncher.Main"/>
 			</manifest>
 		</jar>
+	</target>
+
+	<target name="package" description="Package for Mac OS X">
+		<echo>Packaging</echo>
+		<copy file="TinyLauncher.jar" todir="TinyLauncher.app/Contents/Resources/Java">
+		</copy>
 	</target>
 </project>

@@ -1,17 +1,12 @@
 package us.mbilker.tinylauncher;
 
-import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -19,13 +14,15 @@ import java.util.logging.Logger;
 
 import com.beust.jcommander.JCommander;
 
-import us.mbilker.auth.Authentication;
-import us.mbilker.auth.AuthenticationResponse;
-import us.mbilker.auth.LastLogin;
-import us.mbilker.auth.LastLoginCipherException;
+import org.bonsaimind.minecraftmiddleknife.post16.yggdrasil.AuthenticationRequest;
+import org.bonsaimind.minecraftmiddleknife.post16.yggdrasil.AuthenticationResponse;
+import org.bonsaimind.minecraftmiddleknife.post16.yggdrasil.Yggdrasil;
+
 import us.mbilker.configuration.file.YamlConfiguration;
 
 public class TinyLauncher {
+	
+	public static TinyLauncher instance;
 	
 	public static PrintStream cachedErr = System.err;
 	
@@ -33,21 +30,21 @@ public class TinyLauncher {
 	
 	public static File currentDir = new File(System.getProperty("user.dir", "."));
 	public static File dataDir = new File(currentDir, "data");
-	public static File assetsDir = new File(dataDir, "assets");
-	public static File serverDir = new File(dataDir, "server");
-	public static File configFile = new File(dataDir, "config.yml");
-	
-	public static File clientDir = new File(dataDir, "mc");
-	
-	public static YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
-	
-	public static String[] ignore = { "lwjgl.jar", "jinput.jar", "lwjgl_util.jar" };
-	
-	private File binDir = new File(clientDir, "bin");
-    private String nativeDir = new File(binDir, "natives").getAbsolutePath();
-    
-    private String realUsername = "Player";
-    private String sessionId = "0";
+    public static File serverDir = new File(dataDir, "server");
+    public static File configFile = new File(dataDir, "config.yml");
+
+    public static YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+
+    public File clientDir;
+    public File versionsDir;
+    public File binDir;
+    public String nativesDir;
+    public String assetsDir;
+
+    public CommandOptions params;
+    public CommandOptions paramsDefault = new CommandOptions();
+    public String uuid = "";
+    public String accessToken = "";
 	
 	static {
 		System.setErr(System.out);
@@ -68,15 +65,39 @@ public class TinyLauncher {
 	}
 	
 	public TinyLauncher(String[] args, JCommander cmd, CommandOptions params) {
+		TinyLauncher.instance = this;
+		
+		this.params = params;
 		
 		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd hh:mm:ss aa");
         Date date = new Date();
-        
-        System.out.println("Testing from " + TinyLauncher.class.getName());
 		
         LOGGER.info("Tiny Launcher (by mbilker)");
         LOGGER.info(String.format("Started at %s", dateFormat.format(date)));
 		LOGGER.info(String.format("Data directory: %s", dataDir.toString()));
+		
+		params.loadFromConfig(config);
+		params.saveToConfig(config);
+		saveConfig();
+		
+		if (params.dump) {
+			System.out.println("help: " + params.help);
+			System.out.println("auth: " + params.auth);
+			System.out.println("lastlogin: " + params.lastlogin);
+			System.out.println("username: " + params.username);
+			System.out.println("password: " + params.password);
+			System.out.println("keepAlive: " + params.keepAlive);
+			System.out.println("dump: " + params.dump);
+			
+			System.exit(0);
+			return;
+		}
+		
+		clientDir = new File(dataDir, params.dir);
+		versionsDir = new File(clientDir, "versions");
+		binDir = new File(versionsDir, params.version);
+		nativesDir = new File(dataDir, params.nativesDir).getAbsolutePath();
+		assetsDir = new File(dataDir, params.assetsDir).getAbsolutePath();
 		
 		//LOGGER.info("Setting minecraft directory as user home and current directory just in case");
 		//System.setProperty("user.home", clientDir.getAbsolutePath());
@@ -93,104 +114,93 @@ public class TinyLauncher {
 		}
 		
 		if (!clientDir.exists()) {
-			LOGGER.info(".minecraft folder does not exist, creating. Typical on first start.");
-			clientDir.mkdir();
+			LOGGER.severe("Minecraft folder does not exist. Please an existing one.");
+			System.exit(1);
+			return;
 		}
 		
-		if (!configFile.exists()) {
-			LOGGER.info("Config file does not exist, creating. Typical on first start.");
-			try {
-				config.set("nop", "");
-				saveConfig();
-			} catch (IOException e) {
-				LOGGER.info("Problem creating config file");
-				e.printStackTrace();
-			}
-		}
+		authenticate();
 		
-		if (params.auth && !"".equals(params.username) && !"".equals(params.password)) {
-			final Authentication auth = new Authentication(params.username, params.password);
-			AuthenticationResponse response = AuthenticationResponse.UNKNOWN;
-			try {
-				response = auth.authenticate();
-			} catch (UnsupportedEncodingException e) {
-				e.printStackTrace();
-			} catch (MalformedURLException e) {
-				e.printStackTrace();
-			} catch (IOException e) {
-				e.printStackTrace();
+		params.saveToConfig(config);
+		saveConfig();
+	    
+	    Container container = new Container();
+	    
+	    LOGGER.log(Level.INFO, "Loading natives from: " + nativesDir);
+	    LOGGER.log(Level.INFO, "Loading assets from: " + assetsDir);
+	    
+	    container.loadNatives(nativesDir);
+	    if (!container.loadJarsAndApplet(clientDir.getAbsolutePath(), binDir.getAbsolutePath())) {
+	    	LOGGER.severe("Minecraft failed to launch!");
+	    	System.exit(0);
+	    }
+	}
+	
+	private void authenticate() {
+		if (params.auth) {
+			if ((params.username.equals(paramsDefault.username) && params.password.equals(paramsDefault.password)) && (!config.isString("lastauth.hash-username") || !config.isString("lastauth.hash-password"))) {
+				LOGGER.log(Level.INFO, "Username and password are set to defaults, not authenticating.");
+				return;
 			}
-			if (response == AuthenticationResponse.SUCCESS) {
-				sessionId = auth.getSessionId();
-				realUsername = auth.getRealUsername();
-				LOGGER.log(Level.INFO, String.format("Successful authentication, user: %s, sessionId: %s", realUsername, sessionId));
+			AuthenticationResponse response;
+			try {
+				params.username = (params.username.equals(paramsDefault.username) && config.isString("lastauth.hash-username")) ? new String(Base64.decode(config.getString("lastauth.hash-username"))) : params.username;
+				params.password = (params.password.equals(paramsDefault.password) && config.isString("lastauth.hash-password")) ? new String(Base64.decode(config.getString("lastauth.hash-password"))) : params.password;
+				LOGGER.info("Decoded password: " + params.username + ", password: " + params.password);
+				response = Yggdrasil.authenticate(new AuthenticationRequest(params.username, params.password));
+			} catch (Exception e) {
+				LOGGER.log(Level.SEVERE, "Error authenticating");
+				e.printStackTrace();
+				return;
+			}
+			if (!response.getClientToken().isEmpty() && !response.getAccessToken().isEmpty()) {
+				uuid = response.getSelectedProfile().getId();
+				accessToken = response.getAccessToken();
+				String username = response.getSelectedProfile().getUsername();
+				LOGGER.log(Level.INFO, String.format("Successful authentication, user: %s, uuid: %s, accessToken: %s, clientToken: %s", username, uuid, accessToken, response.getClientToken()));
 				
-				if (params.lastlogin) {
-					LastLogin lastlogin = new LastLogin(auth);
-					try {
-						lastlogin.writeTo(dataDir.getAbsolutePath());
-					} catch (IOException e) {
-						e.printStackTrace();
-					} catch (LastLoginCipherException e) {
-						e.printStackTrace();
-					}
-				}
-				
+				/*
+				final AuthenticationResponse finalResponse = response;
 				if (params.keepAlive > 0) {
 					Timer timer = new Timer("Authentication Keep Alive", true);
 					timer.scheduleAtFixedRate(new TimerTask() {
 						@Override
 						public void run() {
 							try {
-								auth.keepAlive();
-							} catch (UnsupportedEncodingException e) {
-								e.printStackTrace();
-							} catch (MalformedURLException e) {
-								e.printStackTrace();
-							} catch (IOException e) {
-								e.printStackTrace();
+								Yggdrasil.keepAlive(finalResponse);
+							} catch (AuthenticationException e) {
+								LOGGER.log(Level.SEVERE, "Error on keep alive", e);
 							}
 						}
 					}, params.keepAlive * 1000, params.keepAlive * 1000);
+				}
+				*/
+				config.set("lastauth.hash-username", Base64.encodeToString(params.username.getBytes(), false));
+				params.username = username;
+				config.set("lastauth.hash-password", Base64.encodeToString(params.password.getBytes(), false));
+				config.set("lastauth.uuid", uuid);
+				config.set("lastauth.accessToken", accessToken);
+				config.set("lastauth.clientToken", response.getSelectedProfile().getId());
+			} else {
+				LOGGER.warning("Empty client token or access token: " + response.toString());
+				if (!config.getConfigurationSection("lastauth").getValues(false).isEmpty()) {
+					LOGGER.info("Have old values, reusing");
+					params.username = config.getString("lastauth.hash-username", new String(Base64.decode(params.username)));
+					uuid = config.getString("lastauth.uuid", "");
+					accessToken = config.getString("lastauth.accessToken", "");
 				}
 			}
 		} else {
 			LOGGER.warning("No authentication, going offline");
 		}
-	    
-	    System.setProperty("user.home", dataDir.getAbsolutePath());
-	    System.setProperty("minecraft.applet.TargetDirectory", clientDir.getAbsolutePath());
-	    
-	    String appletToLoad = "net.minecraft.client.MinecraftApplet";
-	    String title = "Tiny Launcher";
-	    
-	    System.setProperty("minecraft.applet.WrapperClass", ContainerApplet.class.getName());
-	    
-	    ContainerApplet container = new ContainerApplet(appletToLoad);
-	    
-	    container.setUsername(realUsername);
-	    container.setMpPass(params.password);
-	    container.setSessionId(sessionId);
-	    
-	    ContainerFrame frame = new ContainerFrame(title);
-	    
-	    Dimension d = new Dimension(854, 480);
-	    frame.setPreferredSize(d);
-	    frame.setSize(d);
-	    frame.setContainerApplet(container);
-	    frame.setVisible(true);
-	    
-	    container.loadNatives(nativeDir);
-	    if (container.loadJarsAndApplet(clientDir.getAbsolutePath(), binDir.getAbsolutePath())) {
-	    	container.init();
-	    	container.start();
-	    } else {
-	    	LOGGER.severe("Minecraft failed to launch!");
-	    	System.exit(0);
-	    }
 	}
 	
-	public static void saveConfig() throws IOException {
-		config.save(configFile);
+	public static void saveConfig() {
+		try {
+			config.save(configFile);
+		} catch (IOException e) {
+			LOGGER.log(Level.INFO, "Failed to save config");
+			e.printStackTrace();
+		}
 	}
 }

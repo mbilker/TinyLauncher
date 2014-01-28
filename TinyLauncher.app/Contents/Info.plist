@@ -29,7 +29,7 @@
 	<key>Java</key>
 	<dict>
 		<key>VMOptions</key>
-		<string>-Xms512m -Xmx1024m</string>
+		<string>-Xmx2G -Xms1G</string>
 		<key>MainClass</key>
 		<string>us.mbilker.tinylauncher.Main</string>
 		<key>JVMVersion</key>
