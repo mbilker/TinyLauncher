@@ -136,6 +136,15 @@ public class TinyLauncher {
 	    }
 	}
 	
+	private void loadAuthFromConfig() {
+		if (!config.getConfigurationSection("lastauth").getValues(false).isEmpty()) {
+			LOGGER.info("Have old values, reusing");
+			params.username = config.getString("lastauth.hash-username", new String(Base64.decode(params.username)));
+			uuid = config.getString("lastauth.uuid", "");
+			accessToken = config.getString("lastauth.accessToken", "");
+		}
+	}
+	
 	private void authenticate() {
 		if (params.auth) {
 			if ((params.username.equals(paramsDefault.username) && params.password.equals(paramsDefault.password)) && (!config.isString("lastauth.hash-username") || !config.isString("lastauth.hash-password"))) {
@@ -146,11 +155,11 @@ public class TinyLauncher {
 			try {
 				params.username = (params.username.equals(paramsDefault.username) && config.isString("lastauth.hash-username")) ? new String(Base64.decode(config.getString("lastauth.hash-username"))) : params.username;
 				params.password = (params.password.equals(paramsDefault.password) && config.isString("lastauth.hash-password")) ? new String(Base64.decode(config.getString("lastauth.hash-password"))) : params.password;
-				LOGGER.info("Decoded password: " + params.username + ", password: " + params.password);
 				response = Yggdrasil.authenticate(new AuthenticationRequest(params.username, params.password));
 			} catch (Exception e) {
 				LOGGER.log(Level.SEVERE, "Error authenticating");
 				e.printStackTrace();
+				loadAuthFromConfig();
 				return;
 			}
 			if (!response.getClientToken().isEmpty() && !response.getAccessToken().isEmpty()) {
@@ -183,12 +192,7 @@ public class TinyLauncher {
 				config.set("lastauth.clientToken", response.getSelectedProfile().getId());
 			} else {
 				LOGGER.warning("Empty client token or access token: " + response.toString());
-				if (!config.getConfigurationSection("lastauth").getValues(false).isEmpty()) {
-					LOGGER.info("Have old values, reusing");
-					params.username = config.getString("lastauth.hash-username", new String(Base64.decode(params.username)));
-					uuid = config.getString("lastauth.uuid", "");
-					accessToken = config.getString("lastauth.accessToken", "");
-				}
+				loadAuthFromConfig();
 			}
 		} else {
 			LOGGER.warning("No authentication, going offline");
