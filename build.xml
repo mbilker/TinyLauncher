@@ -8,9 +8,7 @@
 		<fileset dir="lib" includes="*.jar"/>
 	</path>
 	
-	<target name="main" depends="clean, compile, compress, package" description="Main target">
-		<echo>Building the jar file.</echo>
-	</target>
+	<target name="build" depends="clean, compile, compress, package" description="Main target" />
 	
 	<target name="clean" description="Cleans project">
 		<echo>Cleaning</echo>
