@@ -1,4 +1,4 @@
 #!/bin/bash
 
 cd $(dirname $0)/../../..
-exec /usr/libexec/java_home -v 1.7 --exec java -Dsun.java2d.noddraw=true -Dsun.java2d.d3d=false -Dsun.java2d.opengl=false -Dsun.java2d.pmoffscreen=false -Xdock:name=TinyLauncher -Xdock:icon=$(dirname $0)/../Resources/Minecraft.icns -Xmx1G -Xms1G -jar $(dirname $0)/../Resources/Java/TinyLauncher.jar
+exec /usr/libexec/java_home --exec java -Dsun.java2d.noddraw=true -Dsun.java2d.d3d=false -Dsun.java2d.opengl=false -Dsun.java2d.pmoffscreen=false -Xdock:name=TinyLauncher -Xdock:icon=$(dirname $0)/../Resources/Minecraft.icns -Xmx1G -Xms1G -jar $(dirname $0)/../Resources/Java/TinyLauncher.jar
