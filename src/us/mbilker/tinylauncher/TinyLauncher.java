@@ -30,7 +30,7 @@ public class TinyLauncher {
 	
 	public static File currentDir = new File(System.getProperty("user.dir", "."));
 	public static File dataDir = new File(currentDir, "data");
-    public static File serverDir = new File(dataDir, "server");
+    //public static File serverDir = new File(dataDir, "server");
     public static File configFile = new File(dataDir, "config.yml");
 
     public static YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
@@ -108,10 +108,10 @@ public class TinyLauncher {
 			dataDir.mkdir();
 		}
 		
-		if (!serverDir.exists()) {
-			LOGGER.info("Server folder does not exist, creating. Typical on first start.");
-			serverDir.mkdir();
-		}
+		//if (!serverDir.exists()) {
+		//	LOGGER.info("Server folder does not exist, creating. Typical on first start.");
+		//	serverDir.mkdir();
+		//}
 		
 		if (!clientDir.exists()) {
 			LOGGER.severe("Minecraft folder does not exist. Please an existing one.");

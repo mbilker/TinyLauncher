@@ -1,0 +1,9 @@
+options:
+  help: false
+  auth: true
+  lastlogin: false
+  keepAlive: 300
+  dir: mc
+  version: 1.7.4
+  assets: assets
+  natives: natives
