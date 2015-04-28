@@ -2,11 +2,11 @@ package us.mbilker.tinylauncher;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.UUID;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
@@ -16,9 +16,12 @@ import com.beust.jcommander.JCommander;
 
 import org.bonsaimind.minecraftmiddleknife.post16.yggdrasil.AuthenticationRequest;
 import org.bonsaimind.minecraftmiddleknife.post16.yggdrasil.AuthenticationResponse;
+import org.bonsaimind.minecraftmiddleknife.post16.yggdrasil.Profile;
 import org.bonsaimind.minecraftmiddleknife.post16.yggdrasil.Yggdrasil;
 
 import us.mbilker.configuration.file.YamlConfiguration;
+import us.mbilker.tinylauncher.util.Base64;
+import us.mbilker.tinylauncher.util.LogFormatter;
 
 public class TinyLauncher {
 	
@@ -30,10 +33,12 @@ public class TinyLauncher {
 	
 	public static File currentDir = new File(System.getProperty("user.dir", "."));
 	public static File dataDir = new File(currentDir, "data");
-    //public static File serverDir = new File(dataDir, "server");
     public static File configFile = new File(dataDir, "config.yml");
 
     public static YamlConfiguration config = YamlConfiguration.loadConfiguration(configFile);
+    
+    public CommandOptions params;
+    public CommandOptions paramsDefault = new CommandOptions();
 
     public File clientDir;
     public File versionsDir;
@@ -41,11 +46,11 @@ public class TinyLauncher {
     public String nativesDir;
     public String assetsDir;
     public String librariesDir;
-
-    public CommandOptions params;
-    public CommandOptions paramsDefault = new CommandOptions();
-    public String uuid = "";
-    public String accessToken = "";
+    
+    private String _username = "";
+    private String _uuid = "";
+    private String _accessToken = "";
+    private String _userType = "";
 	
 	static {
 		System.setErr(System.out);
@@ -53,13 +58,7 @@ public class TinyLauncher {
 		LogManager.getLogManager().reset();
 		Logger.getLogger(Logger.GLOBAL_LOGGER_NAME).setLevel(Level.OFF);
 		
-		ConsoleHandler handler = new ConsoleHandler() {
-			@Override
-			protected void setOutputStream(OutputStream out) throws SecurityException {
-				//super.setOutputStream(System.out);
-				super.setOutputStream(out);
-			}
-		};
+		ConsoleHandler handler = new ConsoleHandler();
 		handler.setFormatter(new LogFormatter());
 		LOGGER.setUseParentHandlers(false);
 		LOGGER.addHandler(handler);
@@ -79,7 +78,7 @@ public class TinyLauncher {
 		
 		params.loadFromConfig(config);
 		params.saveToConfig(config);
-		saveConfig();
+		TinyLauncher.saveConfig();
 		
 		if (params.dump) {
 			System.out.println("help: " + params.help);
@@ -121,28 +120,45 @@ public class TinyLauncher {
 			return;
 		}
 		
-		authenticate();
+		AWTWindow window = new AWTWindow();
+		window.setupFrame();
+		
+		this.authenticate();
 		
 		params.saveToConfig(config);
-		saveConfig();
+		TinyLauncher.saveConfig();
 	    
 	    Container container = new Container();
 	    
-	    LOGGER.log(Level.INFO, "Loading natives from: " + nativesDir);
-	    LOGGER.log(Level.INFO, "Loading assets from: " + assetsDir);
+	    LOGGER.log(Level.INFO, "Loading natives from: " + this.nativesDir);
+	    LOGGER.log(Level.INFO, "Loading assets from: " + this.assetsDir);
 	    
 	    if (!container.loadJarsAndApplet(clientDir.getAbsolutePath(), binDir.getAbsolutePath())) {
 	    	LOGGER.severe("Minecraft failed to launch!");
-	    	System.exit(0);
+	    	System.exit(1);
 	    }
+	}
+	
+	public static Logger createChildLogger(String name) {
+		Logger logger = Logger.getLogger(name);
+		
+		logger.setParent(TinyLauncher.LOGGER);
+		
+		return logger;
 	}
 	
 	private void loadAuthFromConfig() {
 		if (!config.getConfigurationSection("lastauth").getValues(false).isEmpty()) {
 			LOGGER.info("Have old values, reusing");
-			params.username = config.getString("lastauth.hash-username", new String(Base64.decode(params.username)));
-			uuid = config.getString("lastauth.uuid", "");
-			accessToken = config.getString("lastauth.accessToken", "");
+			
+			_username =  config.getString("lastauth.hash-username", new String(Base64.decode(params.username)));
+			_uuid = config.getString("lastauth.uuid", "");
+			_accessToken = config.getString("lastauth.accessToken", "");
+			_userType = "legacy";
+			
+			if (_uuid.isEmpty()) {
+				_uuid = new UUID(0L, 0L).toString();
+			}
 		}
 	}
 	
@@ -152,22 +168,29 @@ public class TinyLauncher {
 				LOGGER.log(Level.INFO, "Username and password are set to defaults, not authenticating.");
 				return;
 			}
+			
+			String password = (params.password.equals(paramsDefault.password) && config.isString("lastauth.hash-password")) ? new String(Base64.decode(config.getString("lastauth.hash-password"))) : params.password;
+			String username = (params.username.equals(paramsDefault.username) && config.isString("lastauth.hash-username")) ? new String(Base64.decode(config.getString("lastauth.hash-username"))) : params.username;
+			
 			AuthenticationResponse response;
 			try {
-				params.username = (params.username.equals(paramsDefault.username) && config.isString("lastauth.hash-username")) ? new String(Base64.decode(config.getString("lastauth.hash-username"))) : params.username;
-				params.password = (params.password.equals(paramsDefault.password) && config.isString("lastauth.hash-password")) ? new String(Base64.decode(config.getString("lastauth.hash-password"))) : params.password;
-				response = Yggdrasil.authenticate(new AuthenticationRequest(params.username, params.password));
+				response = Yggdrasil.authenticate(new AuthenticationRequest(username, password));
 			} catch (Exception e) {
 				LOGGER.log(Level.SEVERE, "Error authenticating");
 				e.printStackTrace();
 				loadAuthFromConfig();
 				return;
 			}
+			
 			if (!response.getClientToken().isEmpty() && !response.getAccessToken().isEmpty()) {
-				uuid = response.getSelectedProfile().getId();
-				accessToken = response.getAccessToken();
-				String username = response.getSelectedProfile().getUsername();
-				LOGGER.log(Level.INFO, String.format("Successful authentication, user: %s, uuid: %s, accessToken: %s, clientToken: %s", username, uuid, accessToken, response.getClientToken()));
+				Profile profile = response.getSelectedProfile();
+				
+				_username = profile.getUsername();
+				_uuid = response.getSelectedProfile().getId();
+				_accessToken = response.getAccessToken();
+				_userType = "mojang";
+				
+				LOGGER.log(Level.INFO, String.format("Successful authentication, user: %s, uuid: %s, accessToken: %s, clientToken: %s", _username, _uuid, _accessToken, response.getClientToken()));
 				
 				/*
 				final AuthenticationResponse finalResponse = response;
@@ -185,12 +208,11 @@ public class TinyLauncher {
 					}, params.keepAlive * 1000, params.keepAlive * 1000);
 				}
 				*/
-				config.set("lastauth.hash-username", Base64.encodeToString(params.username.getBytes(), false));
-				params.username = username;
-				config.set("lastauth.hash-password", Base64.encodeToString(params.password.getBytes(), false));
-				config.set("lastauth.uuid", uuid);
-				config.set("lastauth.accessToken", accessToken);
-				config.set("lastauth.clientToken", response.getSelectedProfile().getId());
+				config.set("lastauth.hash-username", Base64.encodeToString(_username.getBytes(), false));
+				config.set("lastauth.hash-password", Base64.encodeToString(password.getBytes(), false));
+				config.set("lastauth.uuid", _uuid);
+				config.set("lastauth.accessToken", _accessToken);
+				config.set("lastauth.clientToken", response.getClientToken());
 			} else {
 				LOGGER.warning("Empty client token or access token: " + response.toString());
 				loadAuthFromConfig();
@@ -198,6 +220,22 @@ public class TinyLauncher {
 		} else {
 			LOGGER.warning("No authentication, going offline");
 		}
+	}
+	
+	public String getUsername() {
+		return this._username;
+	}
+	
+	public String getUUID() {
+		return this._uuid;
+	}
+	
+	public String getAccessToken() {
+		return this._accessToken;
+	}
+	
+	public String getUserType() {
+		return this._userType;
 	}
 	
 	public static void saveConfig() {

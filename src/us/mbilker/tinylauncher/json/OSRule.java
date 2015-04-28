@@ -18,6 +18,8 @@ package us.mbilker.tinylauncher.json;
 
 import java.util.regex.Pattern;
 
+import us.mbilker.tinylauncher.util.OS;
+
 public class OSRule {
     public Action action = Action.ALLOW;
     public OSInfo os;

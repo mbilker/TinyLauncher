@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import us.mbilker.tinylauncher.util.Util;
+
 import com.beust.jcommander.JCommander;
 
 public class Main {

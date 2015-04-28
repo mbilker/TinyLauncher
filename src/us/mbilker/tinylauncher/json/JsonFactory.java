@@ -9,6 +9,10 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import us.mbilker.tinylauncher.json.adapters.DateAdapter;
+import us.mbilker.tinylauncher.json.adapters.EnumAdaptorFactory;
+import us.mbilker.tinylauncher.json.adapters.FileAdapter;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;

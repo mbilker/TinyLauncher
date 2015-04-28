@@ -1,20 +1,11 @@
-package us.mbilker.tinylauncher;
+package us.mbilker.tinylauncher.util;
 
 import java.io.File;
 
+import us.mbilker.tinylauncher.TinyLauncher;
+
 public class Util {
   private static File workDir = null;
-
-  public static OS getPlatform() {
-    String str = System.getProperty("os.name").toLowerCase();
-    if (str.contains("win")) return OS.WINDOWS;
-    if (str.contains("mac")) return OS.MACOS;
-    if (str.contains("solaris")) return OS.SOLARIS;
-    if (str.contains("sunos")) return OS.SOLARIS;
-    if (str.contains("linux")) return OS.LINUX;
-    if (str.contains("unix")) return OS.LINUX;
-    return OS.UNKNOWN;
-  }
 
   public static File getWorkingDirectory() {
     if (workDir == null) workDir = getWorkingDirectory("minecraft");
@@ -30,13 +21,5 @@ public class Util {
 
   public static boolean isEmpty(String paramString) {
     return (paramString == null) || (paramString.length() == 0);
-  }
-
-  public static enum OS {
-    LINUX, 
-    SOLARIS, 
-    WINDOWS, 
-    MACOS, 
-    UNKNOWN;
   }
 }

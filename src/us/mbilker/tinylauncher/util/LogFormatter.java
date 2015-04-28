@@ -1,4 +1,4 @@
-package us.mbilker.tinylauncher;
+package us.mbilker.tinylauncher.util;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

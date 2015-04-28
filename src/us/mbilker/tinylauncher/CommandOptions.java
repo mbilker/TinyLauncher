@@ -16,7 +16,7 @@ public class CommandOptions {
 	public boolean lastlogin = true;
 	
 	@Parameter(names = { "-user", "-username" })
-	public String username = "Player";
+	public String username = "UGxheWVy"; // 'Player' in base64
 	
 	@Parameter(names = { "-pass", "-password" })
 	public String password = "password";
