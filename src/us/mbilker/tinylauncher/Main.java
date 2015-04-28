@@ -6,13 +6,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import us.mbilker.tinylauncher.util.Util;
+import us.mbilker.tinylauncher.util.OS;
 
 import com.beust.jcommander.JCommander;
 
 public class Main {
-	private static final int MIN_HEAP = 512;
-	private static final int RECOMMENDED_HEAP = 1024;
+	private static final int MIN_HEAP = 1024;
+	private static final int RECOMMENDED_HEAP = 2048;
 	
 	public static void main(String[] args) {
 		CommandOptions params = new CommandOptions();
@@ -28,9 +28,9 @@ public class Main {
 			try {
 				String str = Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
 				List<String> localArrayList = new ArrayList<String>();
-				if (Util.getPlatform().equals(Util.OS.WINDOWS))
+				if (OS.getCurrentPlatform().equals(OS.WINDOWS)) {
 					localArrayList.add("javaw");
-				else {
+				} else {
 					localArrayList.add("java");
 				}
 				localArrayList.add("-Xms" + MIN_HEAP + "M");
@@ -61,10 +61,10 @@ public class Main {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-		        new TinyLauncher(args, cmd, params);
+		        new TinyLauncher(args, cmd, params).launchMinecraft();
 			}
 		} else {
-			new TinyLauncher(args, cmd, params);
+			new TinyLauncher(args, cmd, params).launchMinecraft();
 		}
 	}
 

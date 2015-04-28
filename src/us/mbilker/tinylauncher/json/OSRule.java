@@ -29,7 +29,7 @@ public class OSRule {
         private String version;
     }
 
-    public boolean applies () {
+    public boolean applies() {
         if (os == null) {
             return true;
         }

@@ -1,6 +1,9 @@
 package us.mbilker.tinylauncher;
 
-import us.mbilker.configuration.file.YamlConfiguration;
+import java.util.HashMap;
+import java.util.Map;
+
+import us.mbilker.tinylauncher.util.YamlUtil;
 
 import com.beust.jcommander.Parameter;
 
@@ -39,27 +42,43 @@ public class CommandOptions {
 	@Parameter(names = { "-dump" })
 	public boolean dump = false;
 	
-	public void saveToConfig(YamlConfiguration config) {
-		String pre = "options.";
-		config.set(pre + "auth", auth);
-		config.set(pre + "lastlogin", lastlogin);
-		config.set(pre + "keepAlive", keepAlive);
-		config.set(pre + "dir", dir);
-		config.set(pre + "natives", nativesDir);
-		config.set(pre + "assets", assetsDir);
-		config.set(pre + "version", version);
+	public Map<String, Object> saveToConfig(Map<String, Object> map) {
+		
+		Map<String, Object> config = new HashMap<String, Object>();
+		
+		config.put("auth", auth);
+		config.put("lastlogin", lastlogin);
+		config.put("keepAlive", keepAlive);
+		config.put("dir", dir);
+		config.put("natives", nativesDir);
+		config.put("assets", assetsDir);
+		config.put("version", version);
+		
+		if (map.containsKey("options")) {
+			map.remove("options");
+		}
+		
+		map.put("options", config);
+		
+		return map;
 	}
 	
-	public void loadFromConfig(YamlConfiguration config) {
-		String pre = "options.";
+	public void loadFromConfig(Map<String, Object> config) {
+		if (!config.containsKey("options")) {
+			return;
+		}
+		
+		@SuppressWarnings("unchecked")
+		Map<String, Object> sub = (Map<String, Object>) config.get("options");
+		
 		CommandOptions options = new CommandOptions();
 		
-		this.auth = (this.auth != options.auth) ? this.auth : config.getBoolean(pre + "auth", options.auth);
-		this.lastlogin = (this.lastlogin != options.lastlogin) ? this.lastlogin : config.getBoolean(pre + "lastlogin", options.lastlogin);
-		this.keepAlive = (this.keepAlive != options.keepAlive) ? this.keepAlive : config.getInt(pre + "keepAlive", options.keepAlive);
-		this.dir = (this.dir != options.dir) ? this.dir : config.getString(pre + "dir", options.dir);
-		this.nativesDir = (this.nativesDir != options.nativesDir) ? this.nativesDir : config.getString(pre + "natives", options.nativesDir);
-		this.assetsDir = (this.assetsDir != options.assetsDir) ? this.assetsDir : config.getString(pre + "assets", options.assetsDir);
-		this.version = (this.version != options.version) ? this.version : config.getString(pre + "version", options.version);
+		this.auth = (this.auth != options.auth) ? this.auth : YamlUtil.getBoolean(sub, "auth", options.auth);
+		this.lastlogin = (this.lastlogin != options.lastlogin) ? this.lastlogin : YamlUtil.getBoolean(sub, "lastlogin", options.lastlogin);
+		this.keepAlive = (this.keepAlive != options.keepAlive) ? this.keepAlive : YamlUtil.getInt(sub, "keepAlive", options.keepAlive);
+		this.dir = (this.dir != options.dir) ? this.dir : YamlUtil.getString(sub, "dir", options.dir);
+		this.nativesDir = (this.nativesDir != options.nativesDir) ? this.nativesDir : YamlUtil.getString(sub, "natives", options.nativesDir);
+		this.assetsDir = (this.assetsDir != options.assetsDir) ? this.assetsDir : YamlUtil.getString(sub, "assets", options.assetsDir);
+		this.version = (this.version != options.version) ? this.version : YamlUtil.getString(sub, "version", options.version);
 	}
 }
