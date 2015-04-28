@@ -40,6 +40,7 @@ public class TinyLauncher {
     public File binDir;
     public String nativesDir;
     public String assetsDir;
+    public String librariesDir;
 
     public CommandOptions params;
     public CommandOptions paramsDefault = new CommandOptions();
@@ -96,8 +97,9 @@ public class TinyLauncher {
 		clientDir = new File(dataDir, params.dir);
 		versionsDir = new File(clientDir, "versions");
 		binDir = new File(versionsDir, params.version);
-		nativesDir = new File(dataDir, params.nativesDir).getAbsolutePath();
-		assetsDir = new File(dataDir, params.assetsDir).getAbsolutePath();
+		nativesDir = new File(new File(dataDir, params.nativesDir), params.version).getAbsolutePath();
+		assetsDir = new File(clientDir, "assets").getAbsolutePath();
+		librariesDir = new File(clientDir, "libraries").getAbsolutePath();
 		
 		//LOGGER.info("Setting minecraft directory as user home and current directory just in case");
 		//System.setProperty("user.home", clientDir.getAbsolutePath());
@@ -114,7 +116,7 @@ public class TinyLauncher {
 		//}
 		
 		if (!clientDir.exists()) {
-			LOGGER.severe("Minecraft folder does not exist. Please an existing one.");
+			LOGGER.severe("Minecraft folder does not exist. Please copy an existing one.");
 			System.exit(1);
 			return;
 		}
@@ -129,7 +131,6 @@ public class TinyLauncher {
 	    LOGGER.log(Level.INFO, "Loading natives from: " + nativesDir);
 	    LOGGER.log(Level.INFO, "Loading assets from: " + assetsDir);
 	    
-	    container.loadNatives(nativesDir);
 	    if (!container.loadJarsAndApplet(clientDir.getAbsolutePath(), binDir.getAbsolutePath())) {
 	    	LOGGER.severe("Minecraft failed to launch!");
 	    	System.exit(0);
@@ -206,5 +207,12 @@ public class TinyLauncher {
 			LOGGER.log(Level.INFO, "Failed to save config");
 			e.printStackTrace();
 		}
+	}
+	
+	public static boolean is64bits() {
+		if (System.getProperty("sun.arch.data.model").equalsIgnoreCase("64")) {
+			return true;
+		}
+		return false;
 	}
 }

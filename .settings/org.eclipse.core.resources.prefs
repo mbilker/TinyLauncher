@@ -1,0 +1,11 @@
+eclipse.preferences.version=1
+encoding//src/us/mbilker/tinylauncher/json/Action.java=UTF-8
+encoding//src/us/mbilker/tinylauncher/json/AssetIndex.java=UTF-8
+encoding//src/us/mbilker/tinylauncher/json/DateAdapter.java=UTF-8
+encoding//src/us/mbilker/tinylauncher/json/EnumAdaptorFactory.java=UTF-8
+encoding//src/us/mbilker/tinylauncher/json/ExtractRule.java=UTF-8
+encoding//src/us/mbilker/tinylauncher/json/FileAdapter.java=UTF-8
+encoding//src/us/mbilker/tinylauncher/json/Library.java=UTF-8
+encoding//src/us/mbilker/tinylauncher/json/OS.java=UTF-8
+encoding//src/us/mbilker/tinylauncher/json/OSRule.java=UTF-8
+encoding//src/us/mbilker/tinylauncher/json/Version.java=UTF-8

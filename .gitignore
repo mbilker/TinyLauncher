@@ -1,5 +1,7 @@
 .DS_Store
 ._*
+.gradle
 data
 bin
+build
 logs

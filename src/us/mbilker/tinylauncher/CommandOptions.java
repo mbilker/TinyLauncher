@@ -34,7 +34,7 @@ public class CommandOptions {
 	public String assetsDir = "assets";
 	
 	@Parameter(names = { "-version" })
-	public String version = "1.7.4";
+	public String version = "1.8.4";
 	
 	@Parameter(names = { "-dump" })
 	public boolean dump = false;

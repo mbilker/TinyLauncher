@@ -1,0 +1,42 @@
+apply plugin: 'application'
+apply plugin: 'maven'
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+version = '1.0'
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
+
+mainClassName = 'us.mbilker.tinylauncher.Main'
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  //compile fileTree(dir: 'lib', include: '*.jar')
+  compile 'org.apache.commons:commons-lang3:3.4'
+  compile 'commons-io:commons-io:2.4'
+  compile 'com.beust:jcommander:1.48'
+  compile 'com.google.guava:guava:18.0'
+  compile 'org.yaml:snakeyaml:1.15'
+  compile 'com.google.code.gson:gson:2.3.1'
+  compile 'org.projectlombok:lombok:1.16.4'
+  compile 'es.usc.citius.common:parallel-loops:1.0'
+}
+
+jar {
+  manifest {
+    attributes 'Implementation-Version': version,
+               'Main-Class': mainClassName
+  }
+
+  from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+}
+
+sourceSets {
+  main {
+    java.srcDirs = ['MinecraftMiddleKnife/src', 'src']
+    resources.srcDirs = ['res']
+  }
+}
