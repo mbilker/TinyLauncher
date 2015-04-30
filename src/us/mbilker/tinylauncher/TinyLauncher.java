@@ -143,8 +143,8 @@ public class TinyLauncher {
 			return;
 		}
 
-		AWTWindow window = new AWTWindow();
-		window.setupFrame();
+		//AWTWindow window = new AWTWindow();
+		//window.setupFrame();
 
 		this.authenticate();
 
@@ -190,25 +190,27 @@ public class TinyLauncher {
 
 	private void authenticate() {
 		if (params.auth) {
-			if ((params.username.equals(paramsDefault.username) && params.password.equals(paramsDefault.password)) && (!YamlUtil.isString(config, "lastauth.hash-username") || !YamlUtil.isString(config, "lastauth.hash-password"))) {
-				LOGGER.log(Level.INFO, "Username and password are set to defaults, not authenticating.");
-				return;
-			}
-
 			String username = params.username;
 			String password = params.password;
 			
 			if (config.containsKey("lastauth") && config.get("lastauth") instanceof Map<?, ?>) {
+				LOGGER.log(Level.INFO, "Found lastauth stored in config");
+				
 				@SuppressWarnings("unchecked")
 				Map<String, Object> lastauth = (Map<String, Object>) config.get("lastauth");
 				
-				if (!params.username.equals(paramsDefault.username) && YamlUtil.isString(lastauth, "hash-username")) {
-					username = new String(Base64.decode((String) config.get("lastauth.hash-username")));
+				if (params.username.equals(paramsDefault.username) && YamlUtil.isString(lastauth, "hash-username")) {
+					username = new String(Base64.decode((String) lastauth.get("hash-username")));
 				}
 				
-				if (!params.password.equals(paramsDefault.password) && YamlUtil.isString(config, "lastauth.hash-password")) {
-					password = new String(Base64.decode((String) config.get("lastauth.hash-password")));
+				if (params.password.equals(paramsDefault.password) && YamlUtil.isString(lastauth, "hash-password")) {
+					password = new String(Base64.decode((String) lastauth.get("hash-password")));
 				}
+			}
+			
+			if ((username.equals(paramsDefault.username) && password.equals(paramsDefault.password))) {
+				LOGGER.log(Level.INFO, "Username and password are set to defaults, not authenticating.");
+				return;
 			}
 			
 			AuthenticationResponse response;
@@ -224,8 +226,8 @@ public class TinyLauncher {
 			if (!response.getClientToken().isEmpty() && !response.getAccessToken().isEmpty()) {
 				Profile profile = response.getSelectedProfile();
 
-				_username = profile.getUsername();
-				_uuid = response.getSelectedProfile().getId();
+				_username = username;
+				_uuid = profile.getId();
 				_accessToken = response.getAccessToken();
 				_userType = "mojang";
 
@@ -248,7 +250,7 @@ public class TinyLauncher {
 				
 				Map<String, Object> lastauth = new HashMap<String, Object>();
 				
-				lastauth.put("hash-username", Base64.encodeToString(_username.getBytes(), false));
+				lastauth.put("hash-username", Base64.encodeToString(username.getBytes(), false));
 				lastauth.put("hash-password", Base64.encodeToString(password.getBytes(), false));
 				lastauth.put("uuid", _uuid);
 				lastauth.put("accessToken", _accessToken);

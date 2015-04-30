@@ -67,15 +67,15 @@ public class Container {
 
 			return true;
 		} catch (RunException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, "loadJarsAndApplet RunException:", e);
 		} catch (MalformedURLException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, "loadJarsAndApplet MalformedURLException:", e);
 		} catch (JsonSyntaxException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, "loadJarsAndApplet JsonSyntaxException:", e);
 		} catch (JsonIOException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, "loadJarsAndApplet JsonIOException:", e);
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.log(Level.SEVERE, "loadJarsAndApplet IOException:", e);
 		}
 
 		return false;
@@ -114,6 +114,7 @@ public class Container {
 					try {
 						input.close();
 					} catch (IOException e) {
+						LOGGER.log(Level.SEVERE, "Error closing input stream:", e);
 					}
 				}
 			}

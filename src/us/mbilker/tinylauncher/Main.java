@@ -13,18 +13,18 @@ import com.beust.jcommander.JCommander;
 public class Main {
 	private static final int MIN_HEAP = 1024;
 	private static final int RECOMMENDED_HEAP = 2048;
-	
+
 	public static void main(String[] args) {
 		CommandOptions params = new CommandOptions();
 		JCommander cmd = new JCommander(params, args);
-		
+
 		float f = (Runtime.getRuntime().maxMemory() / 1024L / 1024L);
 		if (f < 512.0F) {
 			if (params.help) {
 				cmd.usage();
 				return;
 			}
-			
+
 			try {
 				String str = Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath();
 				List<String> localArrayList = new ArrayList<String>();
@@ -46,22 +46,24 @@ public class Main {
 				System.out.println("Restarting minecraft with necessary RAM and options " + localArrayList);
 				ProcessBuilder localProcessBuilder = new ProcessBuilder(localArrayList);
 				Process localProcess = localProcessBuilder.start();
-				if (localProcess == null) throw new Exception("!");
-				else {
+				if (localProcess == null) {
+					throw new Exception("!");
+				} else {
 					try {
 						InputStream input = localProcess.getInputStream();
-		                int d;
-		                while ((d = input.read()) != -1) {
-		                    System.out.write(d);
-		                }
-		            } catch (IOException ex) {
-		            }
+						int d;
+						while ((d = input.read()) != -1) {
+							System.out.write(d);
+						}
+					} catch (IOException ex) {
+						ex.printStackTrace();
+					}
 
 					localProcess.waitFor();
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-		        new TinyLauncher(args, cmd, params).launchMinecraft();
+				new TinyLauncher(args, cmd, params).launchMinecraft();
 			}
 		} else {
 			new TinyLauncher(args, cmd, params).launchMinecraft();
